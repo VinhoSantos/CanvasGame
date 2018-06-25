@@ -2,16 +2,21 @@ const gridSize = 800; //breedte van het grid
 const cellSize = 32; //breedte van 1 cell in het grid
 const cellBorder = 2;
 
-var mainChar;
-var canvas;
-var ctx;
+var player;
+var goToX;
+var goToY;
+var canvascanvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var startTime = -1;
+var animationLength = 1000;
 
-window.onload = function() {    
-    canvas = document.getElementById('canvas');
-    ctx = canvas.getContext('2d');
+initGame();
 
+function initGame() {
     drawLevel();
-    drawMainCharacter(8, 6);
+
+    player = new Player(8, 6);
+    drawPlayerAt(8, 6);
 }
 
 function drawLevel() {
@@ -34,13 +39,17 @@ function drawGrid() {
         //verticale lijn
         ctx.moveTo(i, 0);
         ctx.lineTo(i, gridSize);
-    }   
+    }
     
     ctx.stroke();
 }
 
 function getCell(cellNumber) {
     return cellNumber * cellSize + (cellSize / 2);
+}
+
+function getGridPos(pos) {
+    return (pos - (cellSize / 2)) / cellSize;
 }
 
 function drawRoom(startX, startY, width, height) {
@@ -57,19 +66,31 @@ function drawRoom(startX, startY, width, height) {
     ctx.strokeRect(x, y, w, h);
 }
 
-function drawMainCharacter(startX, startY) {
-    mainChar = new MainCharacter(startX, startY);
-    
-    x = getCell(startX);
-    y = getCell(startY);
-    r = 0.5 * cellSize;
+function movePlayerTo(gridX, gridY) {
+    var posX = getCell(gridX);
+    var posY = getCell(gridY);
+
+    requestAnimationFrame(function(timestamp) {
+        animatePlayer(timestamp, posX, posY);
+    });
+}
+
+function drawPlayerAt(gridX, gridY) {    
+    player.x = getCell(gridX);
+    player.y = getCell(gridY);
+
+    drawPlayer(player.x, player.y);
+}
+
+function drawPlayer(x, y) {
+    r = cellSize / 2;
     
     ctx.beginPath();
-
     ctx.arc(x, y, r, 0, 2 * Math.PI);
-
     ctx.fillStyle = "#f00";
     ctx.fill();
+
+    console.log('player drawn at: ' + x + ',' + y);
 }
 
 function drawWallUnit(x, y) {
@@ -98,11 +119,12 @@ function drawWall(startX, startY, endX, endY) {
     }    
 }
 
-function goTo(x, y) {
-    ctx.clearRect(getCell(mainChar.x) - (cellSize / 2), getCell(mainChar.y) - (cellSize / 2), cellSize, cellSize);
+function goTo(x, y) {    
+    player.x = x;
+    player.y = y;
 
-    mainChar.x = x;
-    mainChar.y = y;
+    goToX = getCell(player.x);
+    goToY = getCell(player.x + 1);
 
     x = getCell(x);
     y = getCell(y);
@@ -122,17 +144,17 @@ window.addEventListener("keydown", function (event) {
     }
   
     switch (event.key) {
-      case "ArrowDown":
-        goTo(mainChar.x, mainChar.y + 1);
+      case "ArrowDown": 
+        movePlayerTo(player.x, player.y + 1);
         break;
       case "ArrowUp":
-        goTo(mainChar.x, mainChar.y - 1);
+        movePlayerTo(player.x, player.y - 1);
         break;
       case "ArrowLeft":
-        goTo(mainChar.x - 1, mainChar.y);
+        movePlayerTo(player.x - 1, player.y);
         break;
       case "ArrowRight":
-        goTo(mainChar.x + 1, mainChar.y);
+        movePlayerTo(player.x + 1, player.y);
         break;
       default:
         return; // Quit when this doesn't handle the key event.
@@ -140,4 +162,40 @@ window.addEventListener("keydown", function (event) {
   
     // Cancel the default action to avoid it being handled twice
     event.preventDefault();
-  }, true);
+}, true);
+
+function clearGrid() {
+    ctx.clearRect(0, 0, gridSize, gridSize);
+}
+
+function animatePlayer(timestamp, endPosX, endPosY) {
+    // Calculate animation progress
+    var progress = 0;
+
+    if (startTime < 0) {
+        startTime = timestamp;
+    } else {
+        progress = timestamp - startTime;
+    }
+    var startPosX = getCell(player.x);
+    var startPosY = getCell(player.y);
+    var posX = startPosX + (endPosX - startPosX) * (progress / animationLength);
+    var posY = startPosY + (endPosY - startPosY) * (progress / animationLength);
+
+    console.log('posX: ' + posX);
+    console.log('posY: ' + posY);
+
+    //clearGrid();
+    //drawLevel();
+    drawPlayer(posX, posY);
+
+    if (progress < animationLength) {
+        requestAnimationFrame(function(timestamp) {
+            animatePlayer(timestamp, posX, posY);
+        });
+    } else {
+        clearGrid();
+        drawLevel();
+        drawPlayerAt(getGridPos(endPosX), getGridPos(endPosY));
+    } 
+}
