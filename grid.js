@@ -1,5 +1,5 @@
-const gridSize = 800; //breedte van het grid
-const cellSize = 32; //breedte van 1 cell in het grid
+const gridSize = 800; //breedte en hoogte van het grid
+const cellSize = 32; //breedte en hoogte van 1 cell in het grid
 const cellBorder = 2;
 
 var player;
@@ -8,7 +8,7 @@ var goToY;
 var canvascanvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 var startTime = -1;
-var animationLength = 1000;
+var animationLength = 500;
 
 initGame();
 
@@ -67,19 +67,18 @@ function drawRoom(startX, startY, width, height) {
 }
 
 function movePlayerTo(gridX, gridY) {
-    var posX = getCell(gridX);
-    var posY = getCell(gridY);
+    goToX = gridX;
+    goToY = gridY;
 
-    requestAnimationFrame(function(timestamp) {
-        animatePlayer(timestamp, posX, posY);
-    });
+    startTime = -1;
+    requestAnimationFrame(animatePlayer);
 }
 
 function drawPlayerAt(gridX, gridY) {    
-    player.x = getCell(gridX);
-    player.y = getCell(gridY);
+    player.x = gridX;
+    player.y = gridY;
 
-    drawPlayer(player.x, player.y);
+    drawPlayer(getCell(player.x), getCell(player.y));
 }
 
 function drawPlayer(x, y) {
@@ -119,25 +118,6 @@ function drawWall(startX, startY, endX, endY) {
     }    
 }
 
-function goTo(x, y) {    
-    player.x = x;
-    player.y = y;
-
-    goToX = getCell(player.x);
-    goToY = getCell(player.x + 1);
-
-    x = getCell(x);
-    y = getCell(y);
-    r = 0.5 * cellSize;
-    
-    ctx.beginPath();
-
-    ctx.arc(x, y, r, 0, 2 * Math.PI);
-
-    ctx.fillStyle = "#f00";
-    ctx.fill();
-}
-
 window.addEventListener("keydown", function (event) {
     if (event.defaultPrevented) {
       return; // Do nothing if the event was already processed
@@ -168,7 +148,7 @@ function clearGrid() {
     ctx.clearRect(0, 0, gridSize, gridSize);
 }
 
-function animatePlayer(timestamp, endPosX, endPosY) {
+function animatePlayer(timestamp) {
     // Calculate animation progress
     var progress = 0;
 
@@ -179,23 +159,21 @@ function animatePlayer(timestamp, endPosX, endPosY) {
     }
     var startPosX = getCell(player.x);
     var startPosY = getCell(player.y);
-    var posX = startPosX + (endPosX - startPosX) * (progress / animationLength);
-    var posY = startPosY + (endPosY - startPosY) * (progress / animationLength);
+    var difX = getCell(goToX) - startPosX;
+    var difY = getCell(goToY) - startPosY;
+    var progressPerc = (progress / animationLength);
+    var posX = startPosX + (difX * progressPerc);
+    var posY = startPosY + (difY * progressPerc);
 
-    console.log('posX: ' + posX);
-    console.log('posY: ' + posY);
-
-    //clearGrid();
-    //drawLevel();
+    clearGrid();
+    drawLevel();
     drawPlayer(posX, posY);
 
     if (progress < animationLength) {
-        requestAnimationFrame(function(timestamp) {
-            animatePlayer(timestamp, posX, posY);
-        });
+        requestAnimationFrame(animatePlayer);
     } else {
         clearGrid();
         drawLevel();
-        drawPlayerAt(getGridPos(endPosX), getGridPos(endPosY));
+        drawPlayerAt(goToX, goToY);
     } 
 }
