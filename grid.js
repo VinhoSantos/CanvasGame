@@ -8,7 +8,7 @@ var goToY;
 var canvascanvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 var startTime = -1;
-var animationLength = 500;
+var animationLength = 250;
 
 initGame();
 
@@ -21,9 +21,10 @@ function initGame() {
 
 function drawLevel() {
     drawGrid();
-    drawRoom(7, 5, 10, 15);
-    drawWall(15, 11, 15, 17);
-    drawWall(9, 13, 13, 13);
+    drawRoomAt(7, 5, 10, 15);
+    drawWallAt(15, 11, 15, 17);
+    drawWallAt(9, 13, 13, 13);
+    drawEndGoalAt(16, 16);
 }
 
 function drawGrid() {    
@@ -52,7 +53,7 @@ function getGridPos(pos) {
     return (pos - (cellSize / 2)) / cellSize;
 }
 
-function drawRoom(startX, startY, width, height) {
+function drawRoomAt(startX, startY, width, height) {
     x = getCell(startX);
     y = getCell(startY);
     w = width * cellSize;
@@ -86,13 +87,26 @@ function drawPlayer(x, y) {
     
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2 * Math.PI);
-    ctx.fillStyle = "#f00";
+    ctx.fillStyle = "#0f0";
     ctx.fill();
 
     console.log('player drawn at: ' + x + ',' + y);
 }
 
-function drawWallUnit(x, y) {
+function drawEndGoalAt(gridX, gridY) {
+    drawEndGoal(getCell(gridX), getCell(gridY));
+}
+
+function drawEndGoal(x, y) {
+    r = cellSize / 4;
+    
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = "#f00";
+    ctx.fill();
+}
+
+function drawWallUnitAt(x, y) {
     x = x * cellSize;
     y = y * cellSize;
 
@@ -100,11 +114,11 @@ function drawWallUnit(x, y) {
     ctx.fillRect(x, y, cellSize, cellSize);
 }
 
-function drawWall(startX, startY, endX, endY) {
+function drawWallAt(startX, startY, endX, endY) {
     if (startX < endX) {
         x = startX;      
         while (x <= endX) {
-            drawWallUnit(x, startY);
+            drawWallUnitAt(x, startY);
             x++;
         }
     }
@@ -112,7 +126,7 @@ function drawWall(startX, startY, endX, endY) {
     if (startY < endY) {
         y = startY;
         while (y <= endY) {
-            drawWallUnit(startX, y);
+            drawWallUnitAt(startX, y);
             y++;
         }
     }    
@@ -176,4 +190,10 @@ function animatePlayer(timestamp) {
         drawLevel();
         drawPlayerAt(goToX, goToY);
     } 
+}
+
+function Player(gridX, gridY) {
+    this.x = gridX;
+    this.y = gridY;
+    this.speed = 2;
 }
